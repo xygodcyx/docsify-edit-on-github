@@ -1,61 +1,56 @@
-;(function(win) {
-  function isFunction(functionToCheck) {
-   return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]'
-  }
+(function (win) {
+	function isFunction(functionToCheck) {
+		return typeof functionToCheck === 'function';
+	}
+	function editDoc(event, vm, docEditBase) {
+		var docName = vm.route.file;
 
-  win.EditOnGithubPlugin = {}
+		if (docName) {
+			var editLink = docEditBase + docName;
+			window.open(editLink);
+			event.preventDefault();
+			return false;
+		} else {
+			return true;
+		}
+	}
 
-  function create(docBase, docEditBase, title) {
-    title = title || 'Edit on GitHub'
-    docEditBase = docEditBase || docBase.replace(/\/blob\//, '/edit/')
+	win.EditOnGithubPlugin = {};
 
-    function editDoc(event, vm) {
-      var docName = vm.route.file
+	function create(docBase, docEditBase, title) {
+		title = title || 'Edit on github';
+		docEditBase = docEditBase || docBase.replace(/\/blob\//, '/edit/');
 
-      if (docName) {
-        var editLink = docEditBase + docName
-        window.open(editLink)
-        event.preventDefault()
-        return false
-      } else {
-        return true
-      }
-    }
+		function generateHeader(title) {
+			return (header = [
+				'<div style="overflow: auto">',
+				'<p style="float: right"><a style="text-decoration: underline; cursor: pointer"',
+				'onclick="EditOnGithubPlugin.onClick(event)">',
+				title,
+				'</a></p>',
+				'</div>',
+			].join(''));
+		}
 
-    win.EditOnGithubPlugin.editDoc = editDoc
+		return function (hook, vm) {
+			console.log(EditOnGithubPlugin);
+			win.EditOnGithubPlugin.onClick = function (event) {
+				editDoc(event, vm, docEditBase);
+			};
 
-    function generateHeader(title) {
-      return header = [
-        '<div style="overflow: auto">',
-        '<p style="float: right"><a style="text-decoration: underline; cursor: pointer"',
-        'onclick="EditOnGithubPlugin.onClick(event)">',
-        title,
-        '</a></p>',
-        '</div>'
-      ].join('')
-    }
+			if (isFunction(title)) {
+				hook.afterEach(function (html) {
+					return generateHeader(title(vm.route.file)) + html;
+				});
+			} else {
+				var header = generateHeader(title);
 
-    return function(hook, vm) {
-      win.EditOnGithubPlugin.onClick = function(event) {
-        EditOnGithubPlugin.editDoc(event, vm)
-      }
+				hook.afterEach(function (html) {
+					return header + html;
+				});
+			}
+		};
+	}
 
-      if (isFunction(title)) {
-
-        hook.afterEach(function (html) {
-          return generateHeader(title(vm.route.file)) + html
-        })
-      } else {
-        var header = generateHeader(title)
-
-        hook.afterEach(function (html) {
-          return header + html
-        })
-      }
-
-
-    }
-  }
-
-  win.EditOnGithubPlugin.create = create
-}) (window)
+	win.EditOnGithubPlugin.create = create;
+})(window);
